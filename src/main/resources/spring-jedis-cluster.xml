@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+      http://www.springframework.org/schema/mvc
+      http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<!-- redis 连接池的通用配置 -->
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxTotal" value="4096" />
+		<property name="maxIdle" value="200" />
+		<property name="maxWaitMillis" value="3000" />
+		<property name="testOnBorrow" value="true" />
+		<property name="testOnReturn" value="true" />
+	</bean>
+	<!-- redis-trib 集群配置方式，理论上配置集群中的任意一个节点即可，不支持sentinel模式集群 -->
+	<bean id="jedisCluster" class="redis.clients.jedis.JedisCluster">
+		<constructor-arg index="0">
+			<set>
+				<bean class="redis.clients.jedis.HostAndPort">
+					<constructor-arg index="0" value="10.16.69.184" />
+					<constructor-arg index="1" value="6376" />
+				</bean>
+			</set>
+		</constructor-arg>
+		<constructor-arg index="1" value="2000" type="int" />
+		<constructor-arg index="2" value="2" type="int" />
+		<constructor-arg index="3" ref="poolConfig" />
+	</bean>
+
+	<!-- 单节点的JedisPool配置方式,支持单一主从模式的redis集群,不支持sentinel模式的集群 10.16.69.184-->
+	<bean id="jedisPool" class="redis.clients.jedis.JedisPool">
+		<constructor-arg index="0" ref="poolConfig" />
+		<constructor-arg index="1" value="127.0.0.1" />
+		<constructor-arg index="2" value="6378" type="int" />
+	</bean>
+
+	
+</beans>

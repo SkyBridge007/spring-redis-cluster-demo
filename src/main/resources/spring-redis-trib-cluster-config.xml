@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/context
+      http://www.springframework.org/schema/context/spring-context.xsd
+      http://www.springframework.org/schema/mvc
+      http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+	<!--配置文件加载-->
+
+     <context:property-placeholder location="resources/redis.properties"/>
+     <context:property-placeholder location="resources/*.properties"/>
+     <bean class="com.redis.cluster.support.config.MonitorConfig" />
+
+    <!--对静态资源文件的访问-->
+
+     <mvc:default-servlet-handler/>
+     <mvc:annotation-driven />
+     <context:component-scan base-package="org.bridge.redis"/>
+	
+	<!--通过构造方法注入RedisNode -->
+
+	<bean id="clusterRedisNodes1" class="org.springframework.data.redis.connection.RedisNode">
+		<constructor-arg value="10.16.69.184" />
+		<constructor-arg value="6376" type="int" />
+	</bean>
+	<bean id="clusterRedisNodes2" class="org.springframework.data.redis.connection.RedisNode">
+		<constructor-arg value="10.16.69.184" />
+		<constructor-arg value="6377" type="int" />
+	</bean>
+	<bean id="clusterRedisNodes3" class="org.springframework.data.redis.connection.RedisNode">
+		<constructor-arg value="10.16.69.184" />
+		<constructor-arg value="6378" type="int" />
+	</bean>
+
+	<!--setter方式注入 RedisClusterConfiguration-->
+
+	<bean id="redisClusterConfiguration"
+		class="org.springframework.data.redis.connection.RedisClusterConfiguration">
+		<property name="clusterNodes">
+			<set>
+				<ref bean="clusterRedisNodes1" />
+				<ref bean="clusterRedisNodes2" />
+				<ref bean="clusterRedisNodes3" />
+			</set>
+		</property>
+
+		<!--红色所示部分在从gitHub上获取的jar包中无对应setter方法，因此需要修改其对应的源码。 另外，如果不设置clusterTimeOut值，源码中默认为2S。当集群服务器与客户端不在同一服务器上时，容易报：Could 
+			not get a resource from the Cluster; 如果不设置maxRedirects值，源码中默认为5。一般当此值设置过大时，容易报：Too 
+			many Cluster redirections -->
+		<property name="clusterTimeOut" value="10000" />
+		<property name="maxRedirects" value="5" />
+	</bean>
+
+	<!--setter方式注入,对应的属性需存在setterXXX方法 -->
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxToal" value="1000" />
+		<property name="maxIdle" value="1000" />
+		<property name="maxWaitMillis" value="1000" />
+	</bean>
+	
+	<!-- 采用RedisCluster集群方式构建JedisConnectionFactory -->
+	<bean id="jedisConnFactory"
+		class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory"
+		p:use-pool="true">
+		<constructor-arg ref="redisClusterConfiguration" />
+		<constructor-arg ref="jedisPoolConfig" />
+	</bean>
+
+	<bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
+		p:connection-factory-ref="jedisConnFactory" />
+		
+	<!--setter方式注入PersonRepoImpl -->
+	<bean id="personRepo" class="com.example.repo.impl.PersonRepoImpl">
+		<property name="redisTemplate" ref="redisTemplate" />
+	</bean>
+
+	<!-- 注：加载lua文件 -->
+	<!-- 
+	<bean id="XXX"
+		class="org.springframework.data.redis.core.script.DefaultRedisScript">
+		<property name="location" value="./redis/XXX.lua" />
+		<property name="resultType" value="java.lang.Void" />
+	</bean>
+	 -->
+</beans>
