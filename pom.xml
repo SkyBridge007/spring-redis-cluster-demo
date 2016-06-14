@@ -5,9 +5,6 @@
 	<groupId>org.bridge.redis.cluster</groupId>
 	<artifactId>spring-redis-cluster-demo</artifactId>
 	<version>0.0.1</version>
-	<modules>
-		<module>../seckill</module>
-	</modules>
 	<packaging>pom</packaging>
 
 	<name>spring-redis-cluster-demo</name>
