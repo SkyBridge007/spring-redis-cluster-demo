@@ -5,8 +5,7 @@
 	<groupId>org.bridge.redis.cluster</groupId>
 	<artifactId>spring-redis-cluster-demo</artifactId>
 	<version>0.0.1</version>
-	<packaging>pom</packaging>
-
+	<packaging>jar</packaging>
 	<name>spring-redis-cluster-demo</name>
 	<url>http://maven.apache.org</url>
 
